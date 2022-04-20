@@ -2,25 +2,25 @@ const bodyParser = require("body-parser");
 const express = require("express");
 const https = require("https");
 var app = express()
-const port = 3000
+const port = process.env.PORT || 3000
 
-app.use(express.static(__dirname + '/node_modules/bootstrap/dist'));
+// app.use(express.static(__dirname + '/node_modules/bootstrap/dist'));
 app.use(express.static(__dirname));
-app.use(bodyParser.urlencoded({extended: true}))
+app.use(bodyParser.urlencoded({ extended: true }))
 
 app.get('/', (req, res) => {
     res.sendFile(__dirname + "/index.html")
 })
 
-app.post('/', (req,res) => {
+app.post('/', (req, res) => {
     var firstName = req.body.fName
     var lastName = req.body.lName
     var email = req.body.email
 
     const data = {
-        members:[
+        members: [
             {
-                email_address : email,
+                email_address: email,
                 status: "subscribed",
                 merge_fields: {
                     FNAME: firstName,
@@ -31,7 +31,7 @@ app.post('/', (req,res) => {
     }
 
     const jsonData = JSON.stringify(data)
-    
+
 
     const url = "https://us14.api.mailchimp.com/3.0/lists/d7eaebc50f"
     const options = {
@@ -40,6 +40,11 @@ app.post('/', (req,res) => {
     }
 
     const request = https.request(url, options, (response) => {
+        if (response.statusCode === 200) {
+            res.sendFile(__dirname + "/success.html")
+        } else {
+            res.sendFile(__dirname + "/fail.html")
+        }
         response.on("data", (data) => {
             console.log(JSON.parse(data));
         })
@@ -48,7 +53,7 @@ app.post('/', (req,res) => {
         // response.on('data', function (chunk) {
         //     str += chunk;
         //   });
-        
+
         //   //the whole response has been received, so we just print it out here
         //   response.on('end', function () {
         //     console.log(str);
@@ -59,7 +64,11 @@ app.post('/', (req,res) => {
     request.write(jsonData)
     request.end()
 })
-  
+
+app.post("/fail", (req, res) => {
+    res.redirect("/")
+})
+
 app.listen(port, () => {
     console.log("started");
 })
